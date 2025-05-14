@@ -1,0 +1,7 @@
+{
+  "item.battleteleporter.battle_teleporter": "Battle Teleporter",
+  "tab.battleteleporter.main_tab": "Battle Teleporter Mod",
+
+  "message.battleteleporter.hologram_died_because_of_distance": "Hologram was disabled due to distance!",
+  "message.battleteleporter.hologram_died_because_of_time_expired": "Hologram was disabled due to time expired!"
+}
