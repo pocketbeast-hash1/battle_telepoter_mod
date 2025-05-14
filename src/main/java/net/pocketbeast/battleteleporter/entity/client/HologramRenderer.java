@@ -15,12 +15,12 @@ public class HologramRenderer extends HumanoidMobRenderer<HologramEntity, Hologr
 
     public HologramRenderer(EntityRendererProvider.Context pContext, HologramModel<HologramEntity> pModel, float pShadowRadius) {
         super(pContext, pModel, pShadowRadius);
-//        this.addLayer(new HumanoidArmorLayer<>(
-//                this,
-//                new HologramModel<>(pContext.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
-//                new HologramModel<>(pContext.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)),
-//                pContext.getModelManager()
-//        ));
+        this.addLayer(new HumanoidArmorLayer<>(
+                this,
+                new HologramModel<>(pContext.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
+                new HologramModel<>(pContext.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)),
+                pContext.getModelManager()
+        ));
     }
 
     @Override
