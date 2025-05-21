@@ -4,9 +4,10 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.util.Mth;
+import net.pocketbeast.battleteleporter.entity.custom.HologramEntity;
 
-public class HologramModel<T extends LivingEntity> extends HumanoidModel<T> {
+public class HologramModel<T extends HologramEntity> extends HumanoidModel<T> {
 
 	public HologramModel(ModelPart root) {
 		super(root);
@@ -28,4 +29,13 @@ public class HologramModel<T extends LivingEntity> extends HumanoidModel<T> {
 		return LayerDefinition.create(meshdefinition, 64, 64);
 	}
 
+	@Override
+	public void setupAnim(T pEntity, float pLimbSwing, float pLimbSwingAmount, float pAgeInTicks, float pNetHeadYaw, float pHeadPitch) {
+		super.setupAnim(pEntity, pLimbSwing, pLimbSwingAmount, pAgeInTicks, pNetHeadYaw, pHeadPitch);
+		if (pEntity.isAggressive()) {
+			this.rightArm.xRot = (3F * Mth.PI) / 2F;
+			this.leftArm.xRot = (3F * Mth.PI) / 2F;
+			this.leftArm.yRot = Mth.PI / 6F;
+		}
+	}
 }

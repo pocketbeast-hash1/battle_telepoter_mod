@@ -1,38 +1,44 @@
 package net.pocketbeast.battleteleporter.entity.custom;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.DifficultyInstance;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.AbstractGolem;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraftforge.network.PacketDistributor;
 import net.pocketbeast.battleteleporter.BattleTeleporterMod;
 import net.pocketbeast.battleteleporter.network.NetworkHandler;
 import net.pocketbeast.battleteleporter.network.packages.HologramLifetimePackage;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class HologramEntity extends AbstractGolem {
+public class HologramEntity extends Mob implements RangedAttackMob {
     private static final HashMap<Player, HologramEntity> playersHolograms = new HashMap<>();
 
     private Player owner;
-    private int remainingLifeTicks = 600;
+    public int remainingLifeTicks = 600;
     private double maxDistance = 100.0;
 
-    public HologramEntity(EntityType<? extends AbstractGolem> pEntityType, Level pLevel) {
+    public int attackTime = 20;
+
+    public HologramEntity(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
@@ -42,7 +48,9 @@ public class HologramEntity extends AbstractGolem {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
                 .add(Attributes.ARMOR, 5.0)
                 .add(Attributes.MOVEMENT_SPEED, 0)
-                .add(Attributes.FOLLOW_RANGE, 10.0);
+                .add(Attributes.FOLLOW_RANGE, 10.0)
+                .add(Attributes.ATTACK_DAMAGE, 6.0)
+                .add(Attributes.ATTACK_KNOCKBACK, 0.5);
     }
 
     public static void addNewHologramToPlayer(Player player, HologramEntity hologram) {
@@ -72,7 +80,17 @@ public class HologramEntity extends AbstractGolem {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(1, new RangedBowAttackGoal<>(this, 1.0d, 15, 30.0f));
+        this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
+
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(
+                this,
+                Mob.class,
+                1,
+                false,
+                false,
+                (enemy) -> enemy instanceof Enemy
+        ));
     }
 
     @Override
@@ -118,10 +136,24 @@ public class HologramEntity extends AbstractGolem {
         }
     }
 
+    @Override
+    public void performRangedAttack(LivingEntity pTarget, float pVelocity) {
+        ItemStack itemstack = this.getProjectile(this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, item -> item instanceof net.minecraft.world.item.BowItem)));
+        AbstractArrow abstractarrow = ProjectileUtil.getMobArrow(this, itemstack, pVelocity);
+
+        double d0 = pTarget.getX() - this.getX();
+        double d1 = pTarget.getY(0.3333333333333333D) - abstractarrow.getY();
+        double d2 = pTarget.getZ() - this.getZ();
+        double d3 = Math.sqrt(d0 * d0 + d2 * d2);
+        abstractarrow.shoot(d0, d1 + d3 * (double)0.2F, d2, 1.6F, 1.0f);
+        this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+        this.level().addFreshEntity(abstractarrow);
+    }
+
     private void suitUpLikeOwner() {
         Player owner = this.getOwner();
         if (owner != null) {
-            ItemStack itemInHand = owner.getItemInHand(InteractionHand.MAIN_HAND);
+            ItemStack itemInHand = new ItemStack(Items.BOW);
             this.setItemInHand(InteractionHand.MAIN_HAND, itemInHand);
 
             ItemStack helmet = owner.getItemBySlot(EquipmentSlot.HEAD);
