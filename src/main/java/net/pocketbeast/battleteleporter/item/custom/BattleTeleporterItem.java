@@ -1,5 +1,8 @@
 package net.pocketbeast.battleteleporter.item.custom;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -63,15 +66,14 @@ public class BattleTeleporterItem extends Item {
         ItemStack teleporter = pPlayer.getItemInHand(pHand);
 
         pPlayer.getCooldowns().addCooldown(this, 30);
-        if (!pLevel.isClientSide()) {
 
+        if (!pLevel.isClientSide()) {
             HologramEntity playersHologram = HologramEntity.getHologramOfPlayer(pPlayer);
             if (playersHologram != null && playersHologram.isAlive()) {
                 swapWithHologram(pLevel, pPlayer);
             } else {
                 spawnHologram(pLevel, pPlayer);
             }
-
         }
 
         teleporter.hurtAndBreak(

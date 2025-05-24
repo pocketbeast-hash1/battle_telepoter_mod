@@ -1,12 +1,21 @@
 package net.pocketbeast.battleteleporter.entity.client;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.pocketbeast.battleteleporter.BattleTeleporterMod;
 import net.pocketbeast.battleteleporter.entity.custom.HologramEntity;
+
+import java.util.Objects;
 
 public class HologramRenderer extends HumanoidMobRenderer<HologramEntity, HologramModel<HologramEntity>> {
     public HologramRenderer(EntityRendererProvider.Context pContext) {
@@ -25,6 +34,10 @@ public class HologramRenderer extends HumanoidMobRenderer<HologramEntity, Hologr
 
     @Override
     public ResourceLocation getTextureLocation(HologramEntity hologramEntity) {
-        return new ResourceLocation(BattleTeleporterMod.MOD_ID, "textures/entity/hologram.png");
+        ResourceLocation ownerSkin = hologramEntity.getOwnerSkin();
+        return Objects.requireNonNullElseGet(
+                ownerSkin,
+                () -> new ResourceLocation(BattleTeleporterMod.MOD_ID, "textures/entity/hologram.png")
+        );
     }
 }

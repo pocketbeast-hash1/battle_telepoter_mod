@@ -1,6 +1,13 @@
 package net.pocketbeast.battleteleporter.entity.custom;
 
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializer;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -11,32 +18,34 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.animal.AbstractGolem;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
 import net.pocketbeast.battleteleporter.BattleTeleporterMod;
 import net.pocketbeast.battleteleporter.network.NetworkHandler;
 import net.pocketbeast.battleteleporter.network.packages.HologramLifetimePackage;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.UUID;
 
 public class HologramEntity extends Mob implements RangedAttackMob {
-    private static final HashMap<Player, HologramEntity> playersHolograms = new HashMap<>();
+    private static final HashMap<UUID, HologramEntity> playersHolograms = new HashMap<>();
 
-    private Player owner;
+    private static final EntityDataAccessor<String> OWNER_ID =
+            SynchedEntityData.defineId(HologramEntity.class, EntityDataSerializers.STRING);
+
     public int remainingLifeTicks = 600;
     private double maxDistance = 100.0;
-
-    public int attackTime = 20;
 
     public HologramEntity(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -53,23 +62,24 @@ public class HologramEntity extends Mob implements RangedAttackMob {
                 .add(Attributes.ATTACK_KNOCKBACK, 0.5);
     }
 
-    public static void addNewHologramToPlayer(Player player, HologramEntity hologram) {
-        playersHolograms.put(player, hologram);
+    public static void addNewHologramToPlayer(@NotNull Player player, HologramEntity hologram) {
+        playersHolograms.put(player.getUUID(), hologram);
+        hologram.setOwnerId(player.getUUID());
         hologram.suitUpLikeOwner();
     }
 
-    public static HologramEntity getHologramOfPlayer(Player player) {
-        return playersHolograms.get(player);
+    public static HologramEntity getHologramOfPlayer(@NotNull Player player) {
+        return playersHolograms.get(player.getUUID());
     }
 
-    public static void deletePlayersHologram(Player player) {
-        HologramEntity hologram = playersHolograms.get(player);
+    public static void deletePlayersHologram(@NotNull Player player) {
+        HologramEntity hologram = playersHolograms.get(player.getUUID());
         if (hologram != null) {
             if (hologram.isAlive()) {
                 hologram.kill();
             }
 
-            playersHolograms.remove(player);
+            playersHolograms.remove(player.getUUID());
             NetworkHandler.CHANNEL.send(
                     PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
                     new HologramLifetimePackage(0)
@@ -78,9 +88,28 @@ public class HologramEntity extends Mob implements RangedAttackMob {
     }
 
     @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(OWNER_ID, "");
+    }
+
+    private void setOwnerId(UUID uuid) {
+        String strUUID = uuid.toString();
+        this.entityData.set(OWNER_ID, strUUID);
+    }
+
+    public UUID getOwnerId() {
+        String strUUID = this.entityData.get(OWNER_ID);
+        if (strUUID.isEmpty())
+            return null;
+        else
+            return UUID.fromString(strUUID);
+    }
+
+    @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new RangedBowAttackGoal<>(this, 1.0d, 15, 30.0f));
+        this.goalSelector.addGoal(1, new RangedBowAttackGoal<>(this, 1.0d, 15, 60.0f));
         this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(
@@ -96,15 +125,19 @@ public class HologramEntity extends Mob implements RangedAttackMob {
     @Override
     protected void tickDeath() {
         super.tickDeath();
-        deletePlayersHologram( getOwner() );
+
+        if (!this.level().isClientSide()) {
+            Player owner = this.level().getPlayerByUUID( this.getOwnerId() );
+            if (owner != null) deletePlayersHologram( owner );
+        }
     }
 
     @Override
     public void aiStep() {
         super.aiStep();
 
-        if (this.isAlive()) {
-            Player owner = getOwner();
+        if (this.isAlive() && !this.level().isClientSide()) {
+            Player owner = this.level().getPlayerByUUID( this.getOwnerId() );
 
             if (owner == null) {
                 this.kill();
@@ -138,7 +171,7 @@ public class HologramEntity extends Mob implements RangedAttackMob {
 
     @Override
     public void performRangedAttack(LivingEntity pTarget, float pVelocity) {
-        ItemStack itemstack = this.getProjectile(this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, item -> item instanceof net.minecraft.world.item.BowItem)));
+        ItemStack itemstack = this.getProjectile(this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, item -> item instanceof BowItem)));
         AbstractArrow abstractarrow = ProjectileUtil.getMobArrow(this, itemstack, pVelocity);
 
         double d0 = pTarget.getX() - this.getX();
@@ -151,7 +184,7 @@ public class HologramEntity extends Mob implements RangedAttackMob {
     }
 
     private void suitUpLikeOwner() {
-        Player owner = this.getOwner();
+        Player owner = this.level().getPlayerByUUID( this.getOwnerId() );
         if (owner != null) {
             ItemStack itemInHand = new ItemStack(Items.BOW);
             this.setItemInHand(InteractionHand.MAIN_HAND, itemInHand);
@@ -174,28 +207,12 @@ public class HologramEntity extends Mob implements RangedAttackMob {
         }
     }
 
-    public Player getOwner() {
-        Player owner = null;
-        if (this.owner == null) {
-            for (Map.Entry<Player, HologramEntity> entry : playersHolograms.entrySet()) {
-                if (Objects.equals(this, entry.getValue())) {
-                    owner = entry.getKey();
-                    this.owner = entry.getKey();
-                }
-            }
-        } else {
-            owner = this.owner;
-        }
-
-        return owner;
-    }
-
     public int getRemainingLifeTicks() {
         return remainingLifeTicks;
     }
 
     public boolean ownerToFar() {
-        Player owner = getOwner();
+        Player owner = this.level().getPlayerByUUID( this.getOwnerId() );
         if (owner == null) return true;
 
         if( Math.abs(this.getX() - owner.getX()) > maxDistance) return true;
@@ -203,6 +220,18 @@ public class HologramEntity extends Mob implements RangedAttackMob {
         if( Math.abs(this.getZ() - owner.getZ()) > maxDistance) return true;
 
         return false;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public ResourceLocation getOwnerSkin() {
+        if (!this.level().isClientSide()) return null;
+
+        UUID ownerId = this.getOwnerId();
+        if (ownerId == null) return null;
+
+        AbstractClientPlayer clientPlayer = (AbstractClientPlayer) this.level().getPlayerByUUID(ownerId);
+        if (clientPlayer != null) return clientPlayer.getSkinTextureLocation();
+        else return null;
     }
 
 }
