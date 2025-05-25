@@ -1,10 +1,8 @@
 package net.pocketbeast.battleteleporter.entity.custom;
 
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
@@ -31,6 +29,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
 import net.pocketbeast.battleteleporter.BattleTeleporterMod;
+import net.pocketbeast.battleteleporter.entity.custom.ai.HurtByTargetHologramGoal;
+import net.pocketbeast.battleteleporter.entity.custom.ai.OwnerHurtByTargetHologramGoal;
+import net.pocketbeast.battleteleporter.entity.custom.ai.OwnerHurtTargetHologramGoal;
 import net.pocketbeast.battleteleporter.network.NetworkHandler;
 import net.pocketbeast.battleteleporter.network.packages.HologramLifetimePackage;
 import org.jetbrains.annotations.NotNull;
@@ -112,12 +113,15 @@ public class HologramEntity extends Mob implements RangedAttackMob {
         this.goalSelector.addGoal(1, new RangedBowAttackGoal<>(this, 1.0d, 15, 60.0f));
         this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(
+        this.targetSelector.addGoal(1, new OwnerHurtTargetHologramGoal(this, true));
+        this.targetSelector.addGoal(2, new OwnerHurtByTargetHologramGoal(this, true));
+        this.targetSelector.addGoal(3, new HurtByTargetHologramGoal(this, true));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(
                 this,
                 Mob.class,
                 1,
-                false,
-                false,
+                true,
+                true,
                 (enemy) -> enemy instanceof Enemy
         ));
     }
@@ -127,7 +131,10 @@ public class HologramEntity extends Mob implements RangedAttackMob {
         super.tickDeath();
 
         if (!this.level().isClientSide()) {
-            Player owner = this.level().getPlayerByUUID( this.getOwnerId() );
+            UUID ownerUUID = this.getOwnerId();
+            Player owner = null;
+            if (ownerUUID != null) owner = this.level().getPlayerByUUID(ownerUUID);
+
             if (owner != null) deletePlayersHologram( owner );
         }
     }
@@ -166,6 +173,15 @@ public class HologramEntity extends Mob implements RangedAttackMob {
                     PacketDistributor.PLAYER.with(() -> (ServerPlayer) owner),
                     new HologramLifetimePackage(getRemainingLifeTicks())
             );
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        if (this.isAggressive() && this.getTarget() != null) {
+            this.lookAt(this.getTarget(), 360f, 360f);
         }
     }
 

@@ -1,0 +1,2 @@
+Battle Teleporter helps you to bring more control on battlefield! 'Cause everyone warrior knows: in fight more important cunning, not strength.
+That gadget allows you to create a brave copy of yourself. Confuse enemies, don't let them know you next move! Swap with your clone in tough situations and backstab!  
