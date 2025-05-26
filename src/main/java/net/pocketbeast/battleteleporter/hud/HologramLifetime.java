@@ -1,7 +1,5 @@
 package net.pocketbeast.battleteleporter.hud;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -16,31 +14,38 @@ public class HologramLifetime {
     private static int maxLifeTimeTicks = 0;
     public static int lifeTimeTicks = 0;
 
+    private static int IMG_WIDTH = 100;
+
     @SubscribeEvent
     public static void onRenderHUD(RenderGuiEvent.Post event) {
         if (lifeTimeTicks <= 0) return;
 
-        Minecraft mc = Minecraft.getInstance();
         GuiGraphics gui = event.getGuiGraphics();
-        Font font = mc.font;
 
-        gui.drawString(
-                font,
-                String.valueOf(lifeTimeTicks),
+        int widthPercent = (int) (lifeTimeTicks / (double) maxLifeTimeTicks * 100);
+        int width = (int) (100 * (widthPercent / 100D));
+
+        int xLine = (event.getWindow().getGuiScaledWidth() / 2) - (IMG_WIDTH / 2);
+        int yLine = 15;
+
+        gui.blit(
+                new ResourceLocation("battleteleporter:textures/gui/bars-hologram.png"),
+                xLine,
+                yLine,
+                0,
                 10,
-                10,
-                0x00FF00
+                width,
+                10
         );
 
-        int width = (int) (lifeTimeTicks / (double) maxLifeTimeTicks * 100);
         gui.blit(
-                new ResourceLocation("textures/gui/bars.png"),
-                10,
-                50,
+                new ResourceLocation("battleteleporter:textures/gui/bars-hologram.png"),
+                xLine,
+                yLine,
                 0,
-                4,
-                width,
-                5
+                0,
+                100,
+                10
         );
     }
 
