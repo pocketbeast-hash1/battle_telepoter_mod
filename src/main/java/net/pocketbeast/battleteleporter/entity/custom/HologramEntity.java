@@ -13,6 +13,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -57,7 +58,7 @@ public class HologramEntity extends Mob implements RangedAttackMob {
                 .add(Attributes.MAX_HEALTH, 40)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
                 .add(Attributes.ARMOR, 5.0)
-                .add(Attributes.MOVEMENT_SPEED, 0)
+                .add(Attributes.MOVEMENT_SPEED, 0.0001)
                 .add(Attributes.FOLLOW_RANGE, 10.0)
                 .add(Attributes.ATTACK_DAMAGE, 6.0)
                 .add(Attributes.ATTACK_KNOCKBACK, 0.5);
@@ -181,7 +182,7 @@ public class HologramEntity extends Mob implements RangedAttackMob {
         super.tick();
 
         if (this.isAggressive() && this.getTarget() != null) {
-            this.lookAt(this.getTarget(), 360f, 360f);
+            this.getLookControl().setLookAt(this.getTarget());
         }
     }
 
@@ -236,6 +237,13 @@ public class HologramEntity extends Mob implements RangedAttackMob {
         if( Math.abs(this.getZ() - owner.getZ()) > maxDistance) return true;
 
         return false;
+    }
+
+    public Player getOwner() {
+        UUID ownerUUID = this.getOwnerId();
+        if (ownerUUID == null) return null;
+
+        return this.level().getPlayerByUUID(ownerUUID);
     }
 
     @OnlyIn(Dist.CLIENT)
