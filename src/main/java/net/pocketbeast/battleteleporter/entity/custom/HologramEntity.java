@@ -13,7 +13,6 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -34,6 +33,7 @@ import net.pocketbeast.battleteleporter.entity.custom.ai.HurtByTargetHologramGoa
 import net.pocketbeast.battleteleporter.entity.custom.ai.OwnerHurtByTargetHologramGoal;
 import net.pocketbeast.battleteleporter.entity.custom.ai.OwnerHurtTargetHologramGoal;
 import net.pocketbeast.battleteleporter.network.NetworkHandler;
+import net.pocketbeast.battleteleporter.network.packages.HologramCanBeDisabledPackage;
 import net.pocketbeast.battleteleporter.network.packages.HologramLifetimePackage;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,7 +58,7 @@ public class HologramEntity extends Mob implements RangedAttackMob {
                 .add(Attributes.MAX_HEALTH, 40)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
                 .add(Attributes.ARMOR, 5.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.0001)
+                .add(Attributes.MOVEMENT_SPEED, 0)
                 .add(Attributes.FOLLOW_RANGE, 10.0)
                 .add(Attributes.ATTACK_DAMAGE, 6.0)
                 .add(Attributes.ATTACK_KNOCKBACK, 0.5);
@@ -85,6 +85,10 @@ public class HologramEntity extends Mob implements RangedAttackMob {
             NetworkHandler.CHANNEL.send(
                     PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
                     new HologramLifetimePackage(0)
+            );
+            NetworkHandler.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                    new HologramCanBeDisabledPackage(false)
             );
         }
     }
@@ -256,6 +260,16 @@ public class HologramEntity extends Mob implements RangedAttackMob {
         AbstractClientPlayer clientPlayer = (AbstractClientPlayer) this.level().getPlayerByUUID(ownerId);
         if (clientPlayer != null) return clientPlayer.getSkinTextureLocation();
         else return null;
+    }
+
+    public void disable() {
+        if (this.isAlive() && !this.level().isClientSide()) {
+            Player owner = this.getOwner();
+            deletePlayersHologram(owner);
+            owner.sendSystemMessage(Component.translatable(
+                    "message." + BattleTeleporterMod.MOD_ID + "." + "hologram_disabled"
+            ));
+        }
     }
 
 }

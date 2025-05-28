@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import net.pocketbeast.battleteleporter.BattleTeleporterMod;
+import net.pocketbeast.battleteleporter.network.packages.HologramCanBeDisabledPackage;
 import net.pocketbeast.battleteleporter.network.packages.HologramLifetimePackage;
 
 public class NetworkHandler {
@@ -20,6 +21,12 @@ public class NetworkHandler {
                 .encoder(HologramLifetimePackage::encode)
                 .decoder(HologramLifetimePackage::decode)
                 .consumerMainThread(HologramLifetimePackage::handle)
+                .add();
+
+        CHANNEL.messageBuilder(HologramCanBeDisabledPackage.class, 1)
+                .encoder(HologramCanBeDisabledPackage::encode)
+                .decoder(HologramCanBeDisabledPackage::decode)
+                .consumerMainThread(HologramCanBeDisabledPackage::handle)
                 .add();
     }
 

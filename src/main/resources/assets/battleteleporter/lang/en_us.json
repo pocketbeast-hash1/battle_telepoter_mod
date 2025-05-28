@@ -3,5 +3,10 @@
   "tab.battleteleporter.main_tab": "Battle Teleporter Mod",
 
   "message.battleteleporter.hologram_died_because_of_distance": "Hologram was disabled due to distance!",
-  "message.battleteleporter.hologram_died_because_of_time_expired": "Hologram was disabled due to time expired!"
+  "message.battleteleporter.hologram_died_because_of_time_expired": "Hologram was disabled due to time expired!",
+  "message.battleteleporter.hologram_disabled": "Hologram was disabled!",
+
+  "sounds.battleteleporter.hologram_create": "Hologram was created",
+  "sounds.battleteleporter.hologram_create": "Player swapped with hologram",
+  "sounds.battleteleporter.hologram_disable": "Hologram was disabled"
 }

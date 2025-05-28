@@ -1,9 +1,6 @@
 package net.pocketbeast.battleteleporter;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraft.core.UUIDUtil;
-import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -12,16 +9,12 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.pocketbeast.battleteleporter.entity.ModEntities;
-import net.pocketbeast.battleteleporter.entity.client.HologramRenderer;
 import net.pocketbeast.battleteleporter.item.ModItems;
-import net.pocketbeast.battleteleporter.network.NetworkHandler;
+import net.pocketbeast.battleteleporter.sound.ModSounds;
 import org.slf4j.Logger;
-
-import java.util.UUID;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(BattleTeleporterMod.MOD_ID)
@@ -35,6 +28,7 @@ public class BattleTeleporterMod {
         ModCreativeTabs.register(modEventBus);
         ModItems.register(modEventBus);
         ModEntities.register(modEventBus);
+        ModSounds.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);

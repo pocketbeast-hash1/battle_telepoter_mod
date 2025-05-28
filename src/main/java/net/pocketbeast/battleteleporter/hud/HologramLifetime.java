@@ -13,6 +13,7 @@ public class HologramLifetime {
 
     private static int maxLifeTimeTicks = 0;
     public static int lifeTimeTicks = 0;
+    private static boolean canBeDisabled = false;
 
     private static int IMG_WIDTH = 100;
 
@@ -28,14 +29,16 @@ public class HologramLifetime {
         int xLine = (event.getWindow().getGuiScaledWidth() / 2) - (IMG_WIDTH / 2);
         int yLine = 15;
 
+        int progressBar = canBeDisabled ? 15 : 10;
+
         gui.blit(
                 new ResourceLocation("battleteleporter:textures/gui/bars-hologram.png"),
                 xLine,
                 yLine,
                 0,
-                10,
+                progressBar,
                 width,
-                10
+                5
         );
 
         gui.blit(
@@ -54,6 +57,10 @@ public class HologramLifetime {
             maxLifeTimeTicks = ticks;
         }
         lifeTimeTicks = ticks;
+    }
+
+    public static void updateCanBeDisabled(boolean canBeDisabled) {
+        HologramLifetime.canBeDisabled = canBeDisabled;
     }
 
 }

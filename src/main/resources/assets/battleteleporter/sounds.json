@@ -1,0 +1,22 @@
+{
+  "hologram_create": {
+    "subtitle": "sounds.battleteleporter.hologram_create",
+    "sounds": [
+      "battleteleporter:hologram_create"
+    ]
+  },
+
+  "hologram_swap": {
+    "subtitle": "sounds.battleteleporter.hologram_swap",
+    "sounds": [
+      "battleteleporter:hologram_swap"
+    ]
+  },
+
+  "hologram_disable": {
+    "subtitle": "sounds.battleteleporter.hologram_disable",
+    "sounds": [
+      "battleteleporter:hologram_disable"
+    ]
+  }
+}

@@ -4,10 +4,11 @@
 - [x] Add rotate to target
 - [ ] Add visual effect on create
 - [ ] Add visual effect on swap
+- [ ] Change lifetime bar to red, when ready to disable
 
 ## Sound
-- [ ] Add sound to swap
-- [ ] Add sound to disable
+- [x] Add sound to swap
+- [x] Add sound to disable
 
 ## Features
-- [ ] Add ability to disable
+- [x] Add ability to disable

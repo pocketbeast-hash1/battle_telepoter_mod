@@ -1,21 +1,28 @@
 package net.pocketbeast.battleteleporter.item.custom;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.network.PacketDistributor;
 import net.pocketbeast.battleteleporter.entity.ModEntities;
 import net.pocketbeast.battleteleporter.entity.custom.HologramEntity;
+import net.pocketbeast.battleteleporter.network.NetworkHandler;
+import net.pocketbeast.battleteleporter.network.packages.HologramCanBeDisabledPackage;
+import net.pocketbeast.battleteleporter.sound.ModSounds;
 
 public class BattleTeleporterItem extends Item {
+    private static final int USE_TIME_TO_DISABLE = 40;
+
     public BattleTeleporterItem(Properties pProperties) {
         super(pProperties);
     }
@@ -64,25 +71,71 @@ public class BattleTeleporterItem extends Item {
 
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
         ItemStack teleporter = pPlayer.getItemInHand(pHand);
+        pPlayer.startUsingItem(pHand);
+        return InteractionResultHolder.sidedSuccess(teleporter, pLevel.isClientSide());
+    }
 
-        pPlayer.getCooldowns().addCooldown(this, 30);
+    @Override
+    public void releaseUsing(ItemStack pStack, Level pLevel, LivingEntity pLivingEntity, int pTimeCharged) {
+        Player pPlayer = (Player) pLivingEntity;
 
         if (!pLevel.isClientSide()) {
             HologramEntity playersHologram = HologramEntity.getHologramOfPlayer(pPlayer);
-            if (playersHologram != null && playersHologram.isAlive()) {
+
+            boolean hologramEnabled = playersHologram != null && playersHologram.isAlive();
+            int timeUsed = this.getUseDuration(pStack) - pTimeCharged;
+            if (hologramEnabled && timeUsed < USE_TIME_TO_DISABLE) {
                 swapWithHologram(pLevel, pPlayer);
+                pPlayer.getCooldowns().addCooldown(this, 10);
+                pLevel.playSeededSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), ModSounds.HOLOGRAM_SWAP.get(), SoundSource.BLOCKS, 0.5f, 1, 0);
+
+            } else if (hologramEnabled) {
+                playersHologram.disable();
+                pPlayer.getCooldowns().addCooldown(this, 60);
+                pLevel.playSeededSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), ModSounds.HOLOGRAM_DISABLE.get(), SoundSource.BLOCKS, 0.5f, 1, 0);
+
             } else {
                 spawnHologram(pLevel, pPlayer);
+                pPlayer.getCooldowns().addCooldown(this, 30);
+                pLevel.playSeededSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), ModSounds.HOLOGRAM_CREATE.get(), SoundSource.BLOCKS, 0.5f, 1, 0);
+
             }
         }
 
-        teleporter.hurtAndBreak(
+        pStack.hurtAndBreak(
                 1,
                 pPlayer,
                 player -> {
-                    player.broadcastBreakEvent(pHand);
+                    player.broadcastBreakEvent(pPlayer.getUsedItemHand());
                 }
         );
-        return InteractionResultHolder.sidedSuccess(teleporter, pLevel.isClientSide());
+    }
+
+    @Override
+    public void onUseTick(Level pLevel, LivingEntity pLivingEntity, ItemStack pStack, int pRemainingUseDuration) {
+        if (!pLevel.isClientSide()) {
+            Player player = (Player) pLivingEntity;
+            HologramEntity playersHologram = HologramEntity.getHologramOfPlayer(player);
+
+            boolean hologramEnabled = playersHologram != null && playersHologram.isAlive();
+            if (!hologramEnabled) return;
+
+            int timeUsed = this.getUseDuration(pStack) - pRemainingUseDuration;
+
+            NetworkHandler.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                    new HologramCanBeDisabledPackage(timeUsed >= USE_TIME_TO_DISABLE)
+            );
+        }
+    }
+
+    @Override
+    public UseAnim getUseAnimation(ItemStack pStack) {
+        return UseAnim.BOW;
+    }
+
+    @Override
+    public int getUseDuration(ItemStack pStack) {
+        return 7200;
     }
 }
