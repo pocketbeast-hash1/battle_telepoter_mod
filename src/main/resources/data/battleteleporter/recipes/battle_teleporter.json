@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "#": {
+      "tag": "forge:ingots/iron"
+    }
+  },
+  "pattern": [
+    " G ",
+    "#R#",
+    " # "
+  ],
+  "result": {
+    "item": "battleteleporter:battle_teleporter"
+  },
+  "show_notification": true
+}

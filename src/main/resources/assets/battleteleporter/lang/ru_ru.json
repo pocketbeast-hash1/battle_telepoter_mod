@@ -1,0 +1,12 @@
+{
+  "item.battleteleporter.battle_teleporter": "Боевой Телепортер",
+  "tab.battleteleporter.main_tab": "Battle Teleporter Mod",
+
+  "message.battleteleporter.hologram_died_because_of_distance": "Голограмма отключилась из-за расстояния!",
+  "message.battleteleporter.hologram_died_because_of_time_expired": "Голограмма отключилась, потому что вышло время!",
+  "message.battleteleporter.hologram_disabled": "Голограмма отключилась!",
+
+  "sounds.battleteleporter.hologram_create": "Создана голограмма",
+  "sounds.battleteleporter.hologram_create": "Игрок поменялся местами с голограммой",
+  "sounds.battleteleporter.hologram_disable": "Голограмма отключилась"
+}

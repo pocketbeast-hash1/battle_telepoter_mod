@@ -8,8 +8,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.pocketbeast.battleteleporter.BattleTeleporterMod;
 import net.pocketbeast.battleteleporter.entity.custom.HologramEntity;
 
-import java.util.Objects;
-
 public class HologramRenderer extends HumanoidMobRenderer<HologramEntity, HologramModel<HologramEntity>> {
     public HologramRenderer(EntityRendererProvider.Context pContext) {
         this(pContext, new HologramModel<>(pContext.bakeLayer(ModModelLayers.HOLOGRAM_LAYER)), 1.0f);
@@ -28,9 +26,10 @@ public class HologramRenderer extends HumanoidMobRenderer<HologramEntity, Hologr
     @Override
     public ResourceLocation getTextureLocation(HologramEntity hologramEntity) {
         ResourceLocation ownerSkin = hologramEntity.getOwnerSkin();
-        return Objects.requireNonNullElseGet(
-                ownerSkin,
-                () -> new ResourceLocation(BattleTeleporterMod.MOD_ID, "textures/entity/hologram.png")
-        );
+        if (ownerSkin != null && hologramEntity.isAlive()) {
+            return ownerSkin;
+        } else {
+            return new ResourceLocation(BattleTeleporterMod.MOD_ID, "textures/entity/hologram.png");
+        }
     }
 }

@@ -2,8 +2,8 @@
 
 ## Graphical
 - [x] Add rotate to target
-- [ ] Add visual effect on create
-- [ ] Add visual effect on swap
+- [x] Add visual effect on create
+- [x] Add visual effect on swap
 - [x] Change lifetime bar to red, when ready to disable
 
 ## Sound
@@ -12,3 +12,4 @@
 
 ## Features
 - [x] Add ability to disable
+- [x] Add recipe

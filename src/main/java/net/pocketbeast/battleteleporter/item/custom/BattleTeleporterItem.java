@@ -1,8 +1,11 @@
 package net.pocketbeast.battleteleporter.item.custom;
 
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
@@ -69,6 +72,24 @@ public class BattleTeleporterItem extends Item {
         );
     }
 
+    private void makePoofAround(Level pLevel, LivingEntity entity, int poofCount) {
+        if (!pLevel.isClientSide() && entity != null) {
+            RandomSource random = RandomSource.create();
+            ServerLevel serverLevel = (ServerLevel) pLevel;
+            serverLevel.sendParticles(
+                    ParticleTypes.POOF,
+                    entity.getX(),
+                    entity.getY(),
+                    entity.getZ(),
+                    poofCount,
+                    Mth.nextDouble(random, -1.5, 1.5),
+                    Mth.nextDouble(random, 0, 1.5),
+                    Mth.nextDouble(random, -1.5, 1.5),
+                    0.05d
+            );
+        }
+    }
+
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
         ItemStack teleporter = pPlayer.getItemInHand(pHand);
         pPlayer.startUsingItem(pHand);
@@ -88,6 +109,7 @@ public class BattleTeleporterItem extends Item {
                 swapWithHologram(pLevel, pPlayer);
                 pPlayer.getCooldowns().addCooldown(this, 10);
                 pLevel.playSeededSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), ModSounds.HOLOGRAM_SWAP.get(), SoundSource.BLOCKS, 0.5f, 1, 0);
+                makePoofAround(pLevel, playersHologram, 50);
 
             } else if (hologramEnabled) {
                 playersHologram.disable();
@@ -98,6 +120,7 @@ public class BattleTeleporterItem extends Item {
                 spawnHologram(pLevel, pPlayer);
                 pPlayer.getCooldowns().addCooldown(this, 30);
                 pLevel.playSeededSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), ModSounds.HOLOGRAM_CREATE.get(), SoundSource.BLOCKS, 0.5f, 1, 0);
+                makePoofAround(pLevel, pPlayer, 50);
 
             }
         }
